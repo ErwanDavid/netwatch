@@ -1,11 +1,15 @@
 import fileinput
 import pymongo
+import platform
+
 
 from pymongo import MongoClient
 
-client = MongoClient('mongodb://localhost:27017/')
+client = MongoClient('mongodb://localhost:2717/')
 db = client['netwatch']
-coll = db['20151026']
+coll = db['test']
+print("platerofm", str(platform.node()))
+#coll = db[str(platform.node())]
 
 # Usage
 # sudo tcpdump -i wlan0 -n  | python ./netwatch.py
@@ -38,7 +42,7 @@ for line in fileinput.input():
                 packet['size'] = int(alldata.pop())
             except :
                 packet['size'] = 0
-                print line
+                #print line
 
 
             coll.update({"ps" : packet['ps'], "ipd" : packet['ipd'],
