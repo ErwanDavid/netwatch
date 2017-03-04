@@ -1,0 +1,1 @@
+C:\Users\edavid\AppData\Local\Programs\Python\Python35-32\python.exe C:\Users\edavid\Documents\Inq_Git\Important\netstat_python.py
