@@ -28,8 +28,11 @@ def write_json(netdata):
     sorted_by_value = sorted(netdata.items(), key=lambda kv: kv[1], reverse=True)
     for item in sorted_by_value : 
         connect = {}
-        connect['name'] = item[0]
-        connect['value'] = item[1]
+        tmp_tab = item[0].split('_')
+        connect['src'] = tmp_tab[0]
+        connect['dst'] = tmp_tab[1]
+        connect['proc'] = tmp_tab[2]
+        connect['count'] = item[1]
         strCon = dumps(connect)
         logfile.write(strCon + "\n")
         if (cpt < 20):
@@ -49,7 +52,7 @@ def read_json():
     for line in data:
         try:
             connection = loads(line)
-            existing_data[connection['name']] = connection['value']
+            existing_data[connection['src'] + '_' + connection['dst'] + '_' + connection['proc']] = connection['count']
         except :
             print("ERROR", line)
     return existing_data
@@ -75,7 +78,7 @@ def main():
                 logobj['r_ip'] = raddr
                 logobj['pname'] = proc_names.get(c.pid, '?')
                 logobj['dt'] =  datetime.datetime.now()
-                local_key = logobj['r_ip'] + '_' + logobj['pname']
+                local_key = logobj['l_ip'] + '_' +  logobj['r_ip'] + '_' + logobj['pname']
                 if local_key in big_status.keys() : 
                     big_status[local_key] += 1
                 else :
