@@ -5,38 +5,36 @@ from pprint import pprint
 
 client = MongoClient('mongodb://localhost:27017/')
 db = client['netwatch']
-coll = db['20151026']
+coll = db['grosmatou_11_03']
 
 seen_host = {}
 
 for host in coll.find({"DNS": {"$exists": False}}).distinct('ips'):
     if not host in seen_host:
-        print "search " + host
-        try:
-            obj = IPWhois(host)
-            results = obj.lookup()
-            print "ok"
-            coll.update({"ips": host},
+        print("search " + host)
+
+        obj = IPWhois(host)
+        results = obj.lookup()
+        print("ok")
+        coll.update({"ips": host},
                         {"$set": {"DNS":  results}},
                         upsert=True, multi=True)
-            pprint(results)
-        except:
-            print "error ?? " + host
+        pprint(results)
         seen_host[host] = True
 
 for host in coll.find({"DNS": {"$exists": False}}).distinct('ipd'):
     if not host in seen_host:
-        print "search " + host
+        print("search " + host)
         try:
             obj = IPWhois(host)
             results = obj.lookup()
-            print "ok"
+            print("ok")
             coll.update({"ipd": host},
                         {"$set": {"DNS":  results}},
                         upsert=True, multi=True)
             pprint(results)
         except:
-            print "error ?? " + host
+            print("error ?? " + host)
         seen_host[host] = True
 
 
