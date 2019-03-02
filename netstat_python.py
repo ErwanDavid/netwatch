@@ -3,8 +3,10 @@ from socket import AF_INET, SOCK_STREAM, SOCK_DGRAM
 import time
 import psutil
 import datetime
-import json
-from bson import json_util
+from pprint import pprint
+from bson.json_util import dumps, loads
+import os
+
 
 
 AF_INET6 = getattr(socket, 'AF_INET6', object())
@@ -15,24 +17,52 @@ proto_map = {
     (AF_INET6, SOCK_DGRAM):  'udp6',
 }
 
-def json_serial(obj):
-    """JSON serializer for objects not serializable by default json code"""
+def cls():
+    os.system('cls' if os.name=='nt' else 'clear')
 
-    if isinstance(obj,  datetime.date):
-        serial = obj.isoformat()
-        return serial
-    raise TypeError ("Type not serializable")
+def write_json(netdata):
+    cpt = 1
+    timestr = time.strftime("%Y%m") + "_windows-connection.json"
+    logfile = open(timestr, 'w')
+    cls()
+    sorted_by_value = sorted(netdata.items(), key=lambda kv: kv[1], reverse=True)
+    for item in sorted_by_value : 
+        connect = {}
+        connect['name'] = item[0]
+        connect['value'] = item[1]
+        strCon = dumps(connect)
+        logfile.write(strCon + "\n")
+        if (cpt < 20):
+            print(strCon)
+        cpt += 1
+    print("Total", str(cpt))
+    logfile.close()
+
+def read_json():
+    timestr = time.strftime("%Y%m") + "_windows-connection.json"
+    existing_data = {}
+    try:
+        logfile = open(timestr, 'r')
+        data = logfile.readlines()
+    except IOError:
+        return existing_data
+    for line in data:
+        try:
+            connection = loads(line)
+            existing_data[connection['name']] = connection['value']
+        except :
+            print("ERROR", line)
+    return existing_data
+    
 
 def main():
     proc_names = {}
+    big_status = read_json()
+    cpt = 1
     while 1:
-        timestr = time.strftime("%Y%m%d") + "_windows-connection.json"
-        logfile = open(timestr, 'a')
+        
         for p in psutil.process_iter():
-            try:
-                proc_names[p.pid] = p.name()
-            except psutil.Error:
-                pass
+            proc_names[p.pid] = p.name()
         for c in psutil.net_connections(kind='inet'):
             laddr = "%s:%s" % (c.laddr)
             raddr = ""
@@ -43,15 +73,18 @@ def main():
                 logobj['proto'] = proto_map[(c.family, c.type)]
                 logobj['l_ip'] = laddr
                 logobj['r_ip'] = raddr
-                logobj['pid'] = str(c.pid)
                 logobj['pname'] = proc_names.get(c.pid, '?')
-                #logobj['dt'] =  'ISODate("' + datetime.datetime.now().isoformat() + '")'
                 logobj['dt'] =  datetime.datetime.now()
-                #logstring = proto_map[(c.family, c.type)] + "\t" +  laddr + "\t" +  raddr + "\t" +  c.status + "\t" +  str(c.pid) + "\t" +  proc_names.get(c.pid, '?')[:15]
-                #print(logstring)
-                logfile.write(json.dumps(logobj, default=json_util.default) + "\n")
-        logfile.close()
-        time.sleep(5)
+                local_key = logobj['r_ip'] + '_' + logobj['pname']
+                if local_key in big_status.keys() : 
+                    big_status[local_key] += 1
+                else :
+                    big_status[local_key] = 1
+                #logfile.write(json_str)
+        if (cpt % 6) == 0 : 
+            write_json(big_status)
+        cpt += 1
+        time.sleep(1)
       
 if __name__ == '__main__':
     main()
